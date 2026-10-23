@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>旅行手帳</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+:root{--bg:#FFFCF6;--ink:#3E3A39;--pk:#F2A497;--ye:#F6D27A;--bl:#A8D3E6;--gr:#B9DAA5;--c0:#FBE3DE;--c1:#FCF0CF;--c2:#DDEEF5;--c3:#E3F0D9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'Huninn','Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+.wrap{max-width:1100px;margin:auto;padding:12px 12px 60px}
+h1,h2,h3{margin:.2em 0;line-height:1.3}
+.btn{display:inline-block;border:3px solid var(--ink);background:var(--ye);border-radius:999px;padding:6px 14px;min-height:44px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);font-weight:700;text-decoration:none;color:var(--ink);margin:2px}
+.btn:active{transform:translate(3px,3px);box-shadow:none}
+.btn.s{min-height:36px;padding:2px 12px;font-size:14px}
+.btn.p{background:var(--pk)}.btn.b{background:var(--bl)}.btn.g{background:var(--gr)}.btn.w{background:#fff}
+.card{border:3px solid var(--ink);border-radius:26px;padding:16px;box-shadow:5px 5px 0 var(--ink);animation:in .4s both;position:relative;min-width:0}
+.c0{background:var(--c0)}.c1{background:var(--c1)}.c2{background:var(--c2)}.c3{background:var(--c3)}
+.g{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.tape{position:absolute;top:-12px;left:24px;width:70px;height:22px;background:var(--ye);border:2px solid var(--ink);transform:rotate(-4deg);opacity:.9}
+.b-{border:2px solid var(--ink);border-radius:999px;padding:0 10px;font-size:13px;display:inline-block;margin:2px;background:#fff}
+.nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:3px solid var(--ink);padding:8px 12px}
+.nav .in{max-width:1100px;margin:auto;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.tabs{display:flex;gap:4px;overflow-x:auto;max-width:100%}
+.tabs .btn{flex:none;box-shadow:2px 2px 0 var(--ink)}
+.tabs .btn[aria-current=page]{background:var(--pk);text-decoration:underline}
+.days{display:flex;gap:8px;overflow-x:auto;padding:6px 4px 10px;-webkit-overflow-scrolling:touch}
+.days .btn{flex:none;text-align:center;line-height:1.3;border-radius:20px}
+.days .btn[aria-current=true]{background:var(--pk);animation:pop .3s}
+.tl{border-left:4px dashed var(--ink);margin:8px 0 0 8px;padding-left:14px;display:grid;gap:14px}
+.tm{font-weight:700;font-size:15px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hero{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:760px){.hero{grid-template-columns:1fr 1fr;align-items:center}}
+.ill svg{width:100%;height:auto;display:block}
+.fl{animation:fl 4s ease-in-out infinite}.cl{animation:dr 12s ease-in-out infinite alternate}
+.modal{border:3px solid var(--ink);border-radius:26px;background:var(--bg);padding:16px;width:min(560px,94vw);max-height:90vh;box-shadow:6px 6px 0 var(--ink);animation:pop .25s}
+.modal::backdrop{background:rgba(62,58,57,.45)}
+label{display:block;font-weight:700;margin-top:10px;font-size:14px}
+input,select,textarea{width:100%;border:3px solid var(--ink);border-radius:14px;padding:8px 10px;background:#fff;min-height:44px}
+input[type=checkbox]{width:24px;min-height:24px;display:inline-block;vertical-align:middle}
+.err{color:#A02C1E;font-weight:700;min-height:1.2em}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ye);border:3px solid var(--ink);border-radius:999px;padding:6px 18px;z-index:99;box-shadow:3px 3px 0 var(--ink);display:none}
+#toast.e{background:var(--pk)}
+.empty{text-align:center;padding:24px}
+.note{font-size:14px}
+.bar{height:18px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden}.bar i{display:block;height:100%;background:var(--gr)}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+@keyframes pop{0%{transform:scale(.94)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes fl{50%{transform:translateY(-6px)}}
+@keyframes dr{to{transform:translateX(24px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+/* ===== utils ===== */
+const KEY='tripbook.v2';
+const CATS=['景點','美食','購物','住宿','交通','自由活動'],TRS=['步行','電車','地鐵','巴士','計程車','租車','新幹線','飛機','船','其他'],TM=['飛機','火車','巴士','船','租車','其他'],TDC=['行前準備','證件與文件','行李','購物清單','其他'];
+const MODES={'開車':'driving','步行':'walking','大眾運輸':'transit','騎自行車':'bicycling'};
+const TCOL=['--c0','--c1','--c2','--c3'];
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
+function h(tag,a,...c){const e=document.createElement(tag);for(const k in a||{}){const v=a[k];if(k==='class')e.className=v;else if(k==='for')e.htmlFor=v;else if(/^(data-|aria-|role|style)/.test(k))e.setAttribute(k,v);else e[k]=v}c.flat(9).forEach(x=>{if(x!=null&&x!==false)e.append(x.nodeType?x:document.createTextNode(x))});return e}
+const pd=s=>{const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(s||'');if(!m)return null;const d=new Date(+m[1],m[2]-1,+m[3]);return d.getMonth()==m[2]-1?d:null};
+const fd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
+const dd=(a,b)=>Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/864e5);
+const add=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const WD='日一二三四五六';
+function toast(m,bad){const t=$('#toast');t.textContent=m;t.className=bad?'e':'';t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2200)}
+function copy(txt){if(!txt)return toast('沒有可複製的內容',1);const ok=()=>toast('已複製');if(navigator.clipboard)navigator.clipboard.writeText(txt).then(ok,fb);else fb();function fb(){const t=h('textarea',{value:txt});document.body.append(t);t.select();try{document.execCommand('copy')?ok():toast('複製失敗',1)}catch(e){toast('複製失敗',1)}t.remove()}}
+/* ===== data ===== */
+let DB,S={v:'home',tab:'home',day:null,arch:false,mode:'開車'};
+const T=()=>DB.trips.find(t=>t.id===S.tid);
+function norm(t){['cities','flights','transports','days','items','todos','stays'].forEach(k=>{if(!Array.isArray(t[k]))t[k]=[]});t.id=t.id||uid();t.name=String(t.name||'未命名旅程');return t}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));toast('已自動儲存')}catch(e){toast('儲存失敗：'+e.message,1)}}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r);if(d&&Array.isArray(d.trips)){d.trips.forEach(norm);return d}}}catch(e){toast('讀取資料失敗',1)}return null}
+function clone(t){const c=JSON.parse(JSON.stringify(t)),m={};c.id=uid();c.name+='（複本）';c.archived=false;['cities','days'].forEach(k=>c[k].forEach(o=>{m[o.id]=uid();o.id=m[o.id]}));['flights','transports','items','todos','stays'].forEach(k=>c[k].forEach(o=>{o.id=uid();if(o.cityId)o.cityId=m[o.cityId]||'';if(o.dayId)o.dayId=m[o.dayId]||''}));return c}
+function demo(){const s=add(today(),60),D=n=>fd(add(s,n));const c1={id:uid(),name:'胡志明市',country:'越南',from:D(0),to:D(1)},c2={id:uid(),name:'峴港',country:'越南',from:D(2),to:D(3)};
+const days=[0,1,2,3].map(i=>({id:uid(),date:D(i),title:['抵達胡志明','西貢散步','前往峴港','巴拿山一日'][i]}));
+const it=(d,st,en,name,c,place,addr,tr,cat,must)=>({id:uid(),dayId:days[d].id,start:st,end:en,name,cityId:c.id,place,addr,desc:'（範例行程）',tr,cat,must:!!must,note:'',url:'',pid:'',lat:'',lng:''});
+return norm({id:uid(),name:'越南雙城之旅',sub:'（示範旅程，可自由修改）',country:'越南',pax:2,start:D(0),end:D(3),note:'示範資料，所有航班、住宿與編號均為範例。',cities:[c1,c2],days,
+items:[it(0,'15:00','16:30','濱城市場','',c1,'濱城市場','Le Loi, District 1, Ho Chi Minh City','計程車','購物',1),it(0,'18:30','20:00','越南河粉晚餐',c1,'Pho 2000','1 Phan Chu Trinh, Ben Thanh','步行','美食'),it(1,'09:00','10:00','中央郵局',c1,'西貢中央郵局','2 Cong xa Paris, District 1','步行','景點',1),it(1,'10:30','11:30','西貢聖母院',c1,'西貢聖母院','01 Cong xa Paris, District 1','步行','景點'),it(2,'14:00','16:00','龍橋',c2,'龍橋','Nguyen Van Linh, Da Nang','計程車','景點',1),it(2,'16:30','18:00','美溪沙灘',c2,'美溪沙灘','Vo Nguyen Giap, Da Nang','計程車','自由活動'),it(3,'09:00','13:00','巴拿山黃金橋',c2,'巴拿山 黃金橋','Ba Na Hills, Da Nang','巴士','景點',1)],
+flights:[{id:uid(),dir:'去程',airline:'範例航空',no:'XX000',date:D(0),dtime:'08:00',dap:'桃園機場',atime:'11:00',aap:'新山一機場',note:'範例資料，非真實預訂'}],
+transports:[{id:uid(),mode:'飛機',from:'胡志明市',to:'峴港',date:D(2),dtime:'08:00',atime:'09:20',op:'範例航空',no:'XX111',dst:'新山一機場',ast:'峴港機場',note:'範例資料'}],
+todos:[['行前準備','預訂接送（範例）',0],['證件與文件','確認護照效期',1],['行李','帶轉接頭',0],['購物清單','咖啡、腰果',0]].map(a=>({id:uid(),cat:a[0],text:a[1],done:!!a[2],note:''})),
+stays:[{id:uid(),name:'範例飯店 A',country:'越南',city:'胡志明市',addr:'1 Example St, District 1',in:D(0),out:D(2),conf:'DEMO-0001',tel:'',note:'範例資料，非真實訂房'}]})}
+/* ===== maps ===== */
+const G='https://www.google.com/maps/';
+const hasLL=i=>i.lat!==''&&i.lat!=null&&i.lng!==''&&i.lng!=null&&!isNaN(i.lat)&&!isNaN(i.lng);
+const cityOf=(i,t)=>t.cities.find(x=>x.id===i.cityId)||{};
+const qs=(i,t)=>[i.place||i.name,i.addr,cityOf(i,t).name,cityOf(i,t).country||t.country].filter(Boolean).join(' ');
+const valid=i=>!!(i.place||i.addr||hasLL(i));
+const loc=(i,t)=>hasLL(i)?i.lat+','+i.lng:qs(i,t);
+const mapLink=(i,t)=>/^https?:\/\//i.test(i.url||'')?i.url:G+'search/?api=1&query='+encodeURIComponent(loc(i,t))+(i.pid?'&query_place_id='+encodeURIComponent(i.pid):'');
+const navLink=(i,t)=>G+'dir/?api=1&destination='+encodeURIComponent(loc(i,t))+(i.pid?'&destination_place_id='+encodeURIComponent(i.pid):'')+'&travelmode='+MODES[S.mode];
+const textLink=(arr,dir)=>G+(dir?'dir/?api=1&destination=':'search/?api=1&query=')+encodeURIComponent(arr.filter(Boolean).join(' '));
+const sortI=a=>a.slice().sort((x,y)=>(x.start||'99').localeCompare(y.start||'99'));
+function curDay(t){t.days.sort((a,b)=>a.date.localeCompare(b.date));return t.days.find(d=>d.id===S.day)||t.days.find(d=>d.date===fd(today()))||t.days[0]}
+function routeDay(){const t=T(),d=curDay(t);if(!d)return;const v=sortI(t.items.filter(i=>i.dayId===d.id&&valid(i)));if(!v.length)return toast('今天沒有有效的地點',1);
+const groups=[];v.forEach(i=>{const g=groups[groups.length-1];if(g&&g.c===i.cityId)g.a.push(i);else groups.push({c:i.cityId,a:[i]})});
+const links=[];groups.forEach(g=>{const cn=(t.cities.find(x=>x.id===g.c)||{}).name||'未指定城市';if(g.a.length===1)return links.push([cn+'：'+g.a[0].name,mapLink(g.a[0],t)]);
+for(let s=0;s<g.a.length-1;s+=9){const p=g.a.slice(s,s+10);if(p.length<2)break;const w=p.slice(1,-1).map(x=>encodeURIComponent(loc(x,t))).join('%7C');links.push([cn+'：'+p[0].name+' → '+p[p.length-1].name,G+'dir/?api=1&origin='+encodeURIComponent(loc(p[0],t))+'&destination='+encodeURIComponent(loc(p[p.length-1],t))+(w?'&waypoints='+w:'')+'&travelmode='+MODES[S.mode]])}});
+if(links.length===1)return window.open(links[0][1],'_blank','noopener');
+const m=modal(h('div',{},h('h2',{},'今日路線（'+S.mode+'）'),h('p',{class:'note'},'不同城市、過長的路線會自動分成多段，請依序開啟。'),links.map(l=>h('p',{},h('a',{class:'btn s b',href:l[1],target:'_blank',rel:'noopener'},l[0]))),h('button',{class:'btn w',type:'button',onclick:()=>m.close()},'關閉')))}
+/* ===== modal / forms ===== */
+function modal(c){const d=h('dialog',{class:'modal'},c);d.addEventListener('close',()=>d.remove());document.body.append(d);d.showModal();return d}
+function confirmBox(msg,fn){const d=modal(h('div',{},h('h2',{},'請確認'),h('p',{},msg),h('button',{class:'btn p',type:'button',onclick:()=>{d.close();fn()}},'確定'),h('button',{class:'btn w',type:'button',onclick:()=>d.close()},'取消')))}
+const fx=(k,l,t,o,r)=>({k,l,t:t||'text',o,r});
+function form(title,fields,obj,cb,withNext){const id=uid(),er=h('div',{class:'err',role:'alert'});let d;
+const f=h('form',{},h('h2',{},title),fields.map((x,i)=>{const fid=id+i;let inp;
+if(x.t==='select')inp=h('select',{id:fid,name:x.k},x.o.map(o=>{const[v,l]=Array.isArray(o)?o:[o,o];return h('option',{value:v,selected:(obj[x.k]??'')===v},l)}));
+else if(x.t==='textarea')inp=h('textarea',{id:fid,name:x.k,rows:3,value:obj[x.k]||''});
+else if(x.t==='check')return h('label',{for:fid},h('input',{id:fid,name:x.k,type:'checkbox',checked:!!obj[x.k]}),' '+x.l);
+else inp=h('input',{id:fid,name:x.k,type:x.t,value:obj[x.k]??'',required:!!x.r});
+return [h('label',{for:fid},x.l+(x.r?' *':'')),inp]}),er,
+h('button',{class:'btn p',type:'submit',value:'ok'},'儲存'),withNext?h('button',{class:'btn g',type:'submit',value:'next'},'儲存並新增下一個'):null,h('button',{class:'btn w',type:'button',onclick:()=>d.close()},'取消'));
+f.addEventListener('submit',e=>{e.preventDefault();const v={};fields.forEach(x=>{const el=f.elements[x.k];v[x.k]=x.t==='check'?el.checked:el.value.trim()});const err=cb(v,e.submitter&&e.submitter.value);if(err){er.textContent=err;return}d.close()});
+d=modal(f);return d}
+/* ===== form schemas ===== */
+const cityOpts=t=>[['','（未指定）']].concat(t.cities.map(c=>[c.id,c.name])),cityNames=t=>[''].concat(t.cities.map(c=>c.name));
+const F={
+cities:{n:'城市',f:t=>[fx('name','城市名稱','text',0,1),fx('country','所屬國家／地區'),fx('from','停留開始','date'),fx('to','停留結束','date')],v:v=>v.from&&v.to&&v.to<v.from?'結束日期不能早於開始日期':'',lab:o=>o.name},
+flights:{n:'航班',f:()=>[fx('dir','去程／回程','select',['去程','回程']),fx('airline','航空公司'),fx('no','航班編號'),fx('date','出發日期','date'),fx('dtime','起飛時間','time'),fx('dap','出發機場'),fx('atime','抵達時間','time'),fx('aap','抵達機場'),fx('note','備註','textarea')],lab:o=>o.airline+' '+o.no},
+transports:{n:'城市間交通',f:t=>[fx('mode','交通方式','select',TM),fx('from','出發城市','select',cityNames(t)),fx('to','抵達城市','select',cityNames(t)),fx('date','出發日期','date'),fx('dtime','出發時間','time'),fx('atime','抵達時間','time'),fx('op','交通業者'),fx('no','班次編號'),fx('dst','出發機場／車站'),fx('ast','抵達機場／車站'),fx('note','備註','textarea')],lab:o=>o.mode+' '+o.from+'→'+o.to},
+days:{n:'日期',f:()=>[fx('date','日期','date','',1),fx('title','當日標題')],v:(v,t,o)=>t.days.some(d=>d.date===v.date&&d!==o)?'這一天已經存在':'',lab:o=>o.date+'（會一併刪除當日所有行程）'},
+items:{n:'行程',f:t=>[fx('name','行程名稱','text',0,1),fx('start','開始時間','time'),fx('end','結束時間','time'),fx('cityId','城市','select',cityOpts(t)),fx('place','地點名稱'),fx('addr','地址'),fx('cat','分類','select',CATS),fx('tr','交通方式','select',TRS),fx('must','必去景點','check'),fx('desc','描述','textarea'),fx('note','備註','textarea'),fx('url','Google Maps 網址（選填）','url'),fx('pid','Google Place ID（選填）'),fx('lat','緯度（選填）','number'),fx('lng','經度（選填）','number')],def:()=>({cat:'景點',tr:'步行'}),v:v=>v.start&&v.end&&v.end<v.start?'結束時間不能早於開始時間':(v.url&&!/^https?:\/\//i.test(v.url)?'網址需以 http(s):// 開頭':''),mk:(n)=>{n.dayId=S.day},lab:o=>o.name},
+todos:{n:'待辦',f:()=>[fx('text','待辦事項','text',0,1),fx('cat','分類','select',TDC),fx('note','備註','textarea')],def:()=>({}),mk:n=>{n.done=false},lab:o=>o.text},
+stays:{n:'住宿',f:()=>[fx('name','住宿名稱','text',0,1),fx('country','國家'),fx('city','城市'),fx('addr','地址'),fx('in','入住日期','date'),fx('out','退房日期','date'),fx('conf','訂房確認編號'),fx('tel','電話','tel'),fx('note','備註','textarea')],v:v=>v.in&&v.out&&v.out<v.in?'退房日期不能早於入住日期':'',lab:o=>o.name}};
+function openForm(k,id,pre){const t=T(),c=F[k],o=id?t[k].find(x=>x.id===id):null;if(k==='items'&&!o)c.mk=n=>{n.dayId=curDay(t).id};
+form((o?'編輯':'新增')+c.n,c.f(t),o||Object.assign({},c.def?c.def(t):{},pre),(v,m)=>{const e=c.v&&c.v(v,t,o);if(e)return e;if(o)Object.assign(o,v);else{const n=Object.assign({id:uid()},v);if(c.mk)c.mk(n);t[k].push(n);if(k==='days')S.day=n.id}persist();if(m==='next')setTimeout(()=>openForm(k,null,{cityId:v.cityId,start:v.end||v.start}),60)},k==='items'&&!o)}
+function persist(){save();render()}
+/* ===== trip form / io ===== */
+function tripForm(id){const o=id&&DB.trips.find(t=>t.id===id);const fs=[fx('name','旅程名稱','text',0,1),fx('country','國家或地區'),fx('sub','副標題'),fx('start','出發日期','date'),fx('end','回程日期','date'),fx('pax','旅遊人數','number'),fx('note','備註','textarea')];if(!o)fs.splice(2,0,fx('cities','城市（用逗號分隔，之後可再調整）'));
+form(o?'編輯旅程':'新增旅程',fs,o||{pax:1},v=>{if(v.start&&v.end&&v.end<v.start)return '回程日期不能早於出發日期';if(o){delete v.cities;Object.assign(o,v);if(miss(o))fill(o)}else{const t=norm(Object.assign({},v,{cities:[]}));v.cities.split(/[,，、]/).map(s=>s.trim()).filter(Boolean).forEach(n=>t.cities.push({id:uid(),name:n,country:v.country,from:'',to:''}));const a=pd(v.start),b=pd(v.end);if(a&&b){const n=dd(a,b);if(n>=0&&n<90)for(let i=0;i<=n;i++)t.days.push({id:uid(),date:fd(add(a,i)),title:''})}DB.trips.unshift(t)}persist()})}
+function download(name,txt){try{const a=h('a',{href:URL.createObjectURL(new Blob([txt],{type:'application/json'})),download:name});document.body.append(a);a.click();a.remove()}catch(e){toast('下載失敗，請改用複製',1)}}
+function exportBox(data,name){const txt=JSON.stringify(data,null,1);const m=modal(h('div',{},h('h2',{},'匯出 JSON'),h('textarea',{readOnly:true,rows:8,value:txt}),h('button',{class:'btn g',type:'button',onclick:()=>download(name,txt)},'下載檔案'),h('button',{class:'btn b',type:'button',onclick:()=>copy(txt)},'複製'),h('button',{class:'btn w',type:'button',onclick:()=>m.close()},'關閉')))}
+function importBox(){const ta=h('textarea',{rows:8,placeholder:'貼上 JSON，或選擇檔案'}),fi=h('input',{type:'file',accept:'.json,application/json'}),sel=h('select',{},h('option',{value:'merge'},'合併（保留現有旅程）'),h('option',{value:'replace'},'取代（清除現有旅程）')),er=h('div',{class:'err'});
+fi.onchange=()=>{const r=new FileReader();r.onload=()=>ta.value=r.result;r.readAsText(fi.files[0])};
+const m=modal(h('div',{},h('h2',{},'匯入 JSON'),h('label',{},'檔案'),fi,h('label',{},'或貼上內容'),ta,h('label',{},'方式'),sel,er,h('button',{class:'btn p',type:'button',onclick:()=>{try{const d=JSON.parse(ta.value);const arr=Array.isArray(d.trips)?d.trips:(d&&typeof d.name==='string'?[d]:null);if(!arr||!arr.length||arr.some(x=>!x||typeof x!=='object'||typeof x.name!=='string'))throw Error('格式不正確：需要包含 name 的旅程資料');const ts=JSON.parse(JSON.stringify(arr)).map(norm);confirmBox('即將匯入 '+ts.length+' 趟旅程（'+(sel.value==='merge'?'合併':'取代全部')+'），確定嗎？',()=>{if(sel.value==='replace')DB.trips=ts;else{ts.forEach(x=>{if(DB.trips.some(y=>y.id===x.id))x.id=uid();DB.trips.push(x)})}S.v='home';persist();m.close()})}catch(e){er.textContent='匯入失敗：'+e.message}}},'匯入'),h('button',{class:'btn w',type:'button',onclick:()=>m.close()},'取消')))}
+/* ===== illustrations (static strings only) ===== */
+function illo(t){const s=(t.country+t.name+t.cities.map(c=>c.name+c.country).join('')).toLowerCase();const B='<rect x="2" y="2" width="316" height="176" rx="22" fill="#DDEEF5" stroke="#3E3A39" stroke-width="3"/><g class="cl"><ellipse cx="70" cy="40" rx="30" ry="13" fill="#fff" stroke="#3E3A39" stroke-width="3"/><ellipse cx="250" cy="60" rx="24" ry="10" fill="#fff" stroke="#3E3A39" stroke-width="3"/></g><circle cx="270" cy="34" r="16" fill="#F6D27A" stroke="#3E3A39" stroke-width="3"/>';let b;
+if(/越南|vietnam|胡志明|峴港|河內/.test(s))b='<path d="M2 130Q80 110 160 130T318 125V158a20 20 0 0 1-20 20H22A20 20 0 0 1 2 158Z" fill="#A8D3E6" stroke="#3E3A39" stroke-width="3"/><g class="fl"><path d="M100 110 160 50 220 110Z" fill="#F6D27A" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/><path d="M100 110Q160 126 220 110" fill="none" stroke="#3E3A39" stroke-width="3"/><path d="M130 80 190 80M115 96 205 96" stroke="#F2A497" stroke-width="3"/></g><path d="M20 150c20-30 30-30 40 0" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3"/>';
+else if(/日本|japan|東京|大阪|京都/.test(s))b='<path d="M2 150h316v8a20 20 0 0 1-20 20H22A20 20 0 0 1 2 158Z" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3"/><g class="fl"><path d="M70 150 150 50 230 150Z" fill="#A8D3E6" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/><path d="M128 76 150 50 172 76 160 70 150 78 140 70Z" fill="#fff" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/></g><circle cx="255" cy="125" r="14" fill="#F2A497" stroke="#3E3A39" stroke-width="3"/><circle cx="278" cy="138" r="10" fill="#F2A497" stroke="#3E3A39" stroke-width="3"/>';
+else b='<path d="M2 140Q80 100 160 140T318 130V158a20 20 0 0 1-20 20H22A20 20 0 0 1 2 158Z" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3"/><g class="fl"><path d="M90 90 200 80 230 60 240 64 220 86 250 90 250 100 214 100 196 126 184 124 192 100 120 104Z" fill="#F2A497" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/></g>';
+return h('div',{class:'ill','aria-hidden':'true',innerHTML:'<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">'+B+b+'</svg>'})}
+/* ===== views ===== */
+function status(t){if(t.archived)return'已封存';const a=pd(t.start),b=pd(t.end),n=today();if(!a)return'規劃中';if(n<a)return dd(n,a)<=14?'即將出發':'規劃中';if(b&&n>b)return'已結束';return'旅行中'}
+function cd(t){const a=pd(t.start),b=pd(t.end),n=today();if(!a)return'尚未設定出發日期';if(n<a)return'距離出發還有 '+dd(n,a)+' 天';if(dd(n,a)===0)return'今天出發！';if(b&&n>b)return'這趟旅行已經結束。';return'旅行中，享受旅程吧！'}
+const span=t=>{const a=pd(t.start),b=pd(t.end);return a&&b&&b>=a?(dd(a,b)+1)+' 天':'—'};
+const btn=(l,a,o={})=>h('button',Object.assign({class:'btn s '+(o.c||'w'),type:'button','data-a':a},o.d||{}),l);
+function viewHome(){const list=DB.trips.filter(t=>!!t.archived===S.arch);
+return h('main',{class:'wrap'},h('h1',{},'📒 我的旅行'),h('p',{class:'note'},'資料只保存在這個瀏覽器，不會同步到其他裝置，請定期匯出 JSON 備份。'),
+h('div',{class:'row'},h('button',{class:'btn p',type:'button','data-a':'newTrip'},'＋ 新增旅程'),btn('匯出全部','expAll',{c:'b'}),btn('匯入','imp',{c:'b'}),btn(S.arch?'返回進行中旅程':'查看已封存','togArch'),btn('重設示範資料','reset')),
+list.length?h('div',{class:'g',style:'margin-top:18px'},list.map((t,i)=>h('article',{class:'card c'+(i%4)},h('div',{class:'tape'}),illo(t),h('h2',{},t.name),t.sub?h('div',{class:'note'},t.sub):null,h('div',{},'🌏 '+(t.country||'—')+'｜'+(t.cities.map(c=>c.name).join('、')||'—')),h('div',{class:'note'},(t.start||'?')+' → '+(t.end||'?')+'（'+span(t)+'）'),h('div',{},h('span',{class:'b-'},'● '+status(t)),h('span',{class:'b-'},cd(t))),
+h('div',{class:'row',style:'margin-top:8px'},btn('開啟','open',{c:'p',d:{'data-id':t.id}}),btn('編輯','editTrip',{d:{'data-id':t.id}}),btn('複製','dupTrip',{d:{'data-id':t.id}}),btn(t.archived?'取消封存':'封存','arcTrip',{d:{'data-id':t.id}}),btn('匯出','expOne',{d:{'data-id':t.id}}),btn('刪除','delTrip',{d:{'data-id':t.id}}))))):
+h('div',{class:'card c1 empty',style:'margin-top:18px'},h('h2',{},S.arch?'沒有封存的旅程':'還沒有旅程'),h('p',{},S.arch?'封存的旅程會出現在這裡。':'建立第一趟旅程，開始整理你的手帳吧！'),S.arch?null:h('button',{class:'btn p',type:'button','data-a':'newTrip'},'＋ 新增旅程')))}
+function viewTrip(){const t=T();if(!t){S.v='home';return viewHome()}const tabs=[['home','首頁'],['fl','航班'],['day','每日行程'],['todo','待辦清單'],['stay','住宿']];
+const nav=h('nav',{class:'nav','aria-label':'旅程導覽'},h('div',{class:'in'},btn('← 我的旅行','back'),h('strong',{},t.name),h('div',{class:'tabs'},tabs.map(x=>h('button',{class:'btn s',type:'button','data-a':'tab','data-id':x[0],'aria-current':S.tab===x[0]?'page':'false'},x[1]))),btn('編輯旅程','editTrip',{c:'ye',d:{'data-id':t.id}})));
+const body={home:tHome,fl:tFl,day:tDay,todo:tTodo,stay:tStay}[S.tab](t);return h('div',{},nav,h('main',{class:'wrap'},body))}
+const crud=(k,o)=>[btn('編輯','edit',{d:{'data-k':k,'data-id':o.id}}),btn('刪除','del',{d:{'data-k':k,'data-id':o.id}})];
+const addBtn=(k,l)=>h('button',{class:'btn p',type:'button','data-a':'add','data-k':k},'＋ '+l);
+function tHome(t){return [h('section',{class:'card c0 hero'},h('div',{class:'tape'}),illo(t),h('div',{},h('h1',{},t.name),t.sub?h('div',{},t.sub):null,h('div',{},'🌏 '+(t.country||'—')+'｜'+(t.cities.map(c=>c.name).join('、')||'—')),h('div',{},'🛫 '+(t.start||'?')+'　🛬 '+(t.end||'?')+'　共 '+span(t)+'　'+(t.pax||1)+' 人'),h('p',{},h('span',{class:'b-'},'⏳ '+cd(t))),t.note?h('p',{class:'note'},t.note):null,btn('編輯旅程','editTrip',{c:'p',d:{'data-id':t.id}}))),
+h('h2',{style:'margin-top:20px'},'城市與地區'),addBtn('cities','新增城市'),
+t.cities.length?h('div',{class:'g',style:'margin-top:12px'},t.cities.map((c,i)=>h('div',{class:'card c'+(i%4)},h('strong',{},c.name),h('div',{class:'note'},(c.country||'—')+(c.from?'｜'+c.from+(c.to?' ~ '+c.to:''):'')),h('div',{class:'row'},btn('↑','up',{d:{'data-id':c.id}}),btn('↓','dn',{d:{'data-id':c.id}}),crud('cities',c))))):h('p',{},'還沒有城市，先新增一個吧。')]}
+function tFl(t){const li=(k,arr,fn)=>arr.length?h('div',{class:'g'},arr.map((o,i)=>h('div',{class:'card c'+(i%4)},fn(o),h('div',{class:'row'},crud(k,o))))):h('p',{},'尚無資料。');
+return [h('h2',{},'✈️ 航班'),addBtn('flights','新增航班'),h('div',{style:'height:12px'}),li('flights',t.flights.slice().sort((a,b)=>(a.date+a.dtime).localeCompare(b.date+b.dtime)),o=>h('div',{},h('strong',{},o.dir+'｜'+o.airline+' '+o.no),h('div',{},o.date+' '+o.dtime+' '+o.dap),h('div',{},'→ '+o.atime+' '+o.aap),o.note?h('div',{class:'note'},o.note):null)),
+h('h2',{style:'margin-top:24px'},'🚆 城市間交通'),addBtn('transports','新增交通'),h('div',{style:'height:12px'}),li('transports',t.transports.slice().sort((a,b)=>(a.date+a.dtime).localeCompare(b.date+b.dtime)),o=>h('div',{},h('strong',{},o.mode+'｜'+o.from+' → '+o.to),h('div',{},o.date+' '+o.dtime+' → '+o.atime),h('div',{},o.op+' '+o.no),h('div',{class:'note'},o.dst+' → '+o.ast),o.note?h('div',{class:'note'},o.note):null))]}
+function tDay(t){const cur=curDay(t);if(cur)S.day=cur.id;
+const bar=h('div',{class:'days',role:'tablist'},t.days.map((d,i)=>{const dt=pd(d.date);return h('button',{class:'btn s',type:'button',role:'tab','data-a':'daySel','data-id':d.id,'aria-current':d===cur?'true':'false'},'第'+(i+1)+'天',h('br'),dt?(dt.getMonth()+1)+'/'+dt.getDate()+' 週'+WD[dt.getDay()]:d.date,d.title?h('br'):null,d.title||'')}));
+const head=[h('h2',{},'🗓 每日行程'),h('div',{class:'row'},addBtn('days','新增日期'),miss(t)?btn('依旅程日期補齊每一天','genDays',{c:'g'}):null),bar];
+if(!cur)return [head,h('div',{class:'card c2 empty'},h('p',{},'還沒有日期。請在「編輯旅程」填入出發與回程日期，再按「依旅程日期補齊每一天」，或手動新增日期。'))];
+const items=sortI(t.items.filter(i=>i.dayId===cur.id));
+const tools=h('div',{class:'row'},addBtn('items','新增行程'),h('label',{style:'margin:0'},'路線方式 ',h('select',{style:'width:auto;min-height:36px','data-c':'mode'},Object.keys(MODES).map(m=>h('option',{value:m,selected:m===S.mode},m)))),h('button',{class:'btn b',type:'button','data-a':'route'},'規劃今日路線'),btn('編輯此日','edit',{d:{'data-k':'days','data-id':cur.id}}),btn('刪除此日','del',{d:{'data-k':'days','data-id':cur.id}}));
+if(!items.length)return [head,tools,h('div',{class:'card c3 empty',style:'margin-top:14px'},h('div',{style:'font-size:40px'},'☁️'),h('p',{},'這天還是空白的，來安排點什麼吧！'),addBtn('items','新增行程'))];
+return [head,tools,h('div',{class:'tl',style:'margin-top:16px'},items.map((i,n)=>{const c=cityOf(i,t),ok=valid(i);return h('article',{class:'card c'+(n%4)},h('div',{class:'tm'},'🕒 '+(i.start||'時間未定')+(i.end?' – '+i.end:'')),h('h3',{},i.name,i.must?h('span',{class:'b-',style:'background:var(--ye);margin-left:6px'},'★ 必去'):null),
+h('div',{},h('span',{class:'b-'},i.cat),h('span',{class:'b-',style:'background:var('+TCOL[TRS.indexOf(i.tr)%4]+')'},'🚶 '+i.tr),c.name?h('span',{class:'b-'},'📍 '+c.name):null),
+i.place?h('div',{},i.place):null,i.addr?h('div',{class:'note'},i.addr):null,i.desc?h('div',{},i.desc):null,i.note?h('div',{class:'note'},'📝 '+i.note):null,
+h('div',{class:'row',style:'margin-top:6px'},ok?[h('a',{class:'btn s b',href:mapLink(i,t),target:'_blank',rel:'noopener'},'查看地圖'),h('a',{class:'btn s g',href:navLink(i,t),target:'_blank',rel:'noopener'},'開始導航'),btn('複製地址','cpAddr',{d:{'data-id':i.id}})]:h('span',{class:'note'},'填寫地點或地址即可使用地圖'),btn('複製行程','dupItem',{d:{'data-id':i.id}}),crud('items',i)))}))]}
+function tTodo(t){const done=t.todos.filter(x=>x.done).length,tot=t.todos.length;
+return [h('h2',{},'✅ 待辦清單'),h('p',{},'已完成 '+done+' / '+tot+' 項'),h('div',{class:'bar'},h('i',{style:'width:'+(tot?done/tot*100:0)+'%'})),h('div',{style:'height:12px'}),addBtn('todos','新增待辦'),
+h('div',{class:'g',style:'margin-top:14px'},TDC.map((c,i)=>{const a=t.todos.filter(x=>x.cat===c);return a.length?h('section',{class:'card c'+(i%4)},h('h3',{},c),a.map(x=>h('div',{class:'row',style:'margin:6px 0'},h('label',{style:'margin:0;display:flex;gap:8px;align-items:center;flex:1;min-width:0'},h('input',{type:'checkbox',checked:x.done,'data-c':'todo','data-id':x.id}),h('span',{style:x.done?'text-decoration:line-through':''},(x.done?'✔ ':'')+x.text)),btn('編輯','edit',{d:{'data-k':'todos','data-id':x.id}}),btn('刪除','del',{d:{'data-k':'todos','data-id':x.id}})))):null}))]}
+function tStay(t){return [h('h2',{},'🏨 住宿'),addBtn('stays','新增住宿'),h('div',{class:'g',style:'margin-top:14px'},t.stays.map((s,i)=>{const p=[s.name,s.addr,s.city,s.country];return h('div',{class:'card c'+(i%4)},h('h3',{},s.name),h('div',{},(s.country||'')+' '+(s.city||'')),h('div',{class:'note'},s.addr),h('div',{},'入住 '+(s.in||'—')+'　退房 '+(s.out||'—')),s.conf?h('div',{},'確認編號：'+s.conf):null,s.tel?h('div',{},'☎ '+s.tel):null,s.note?h('div',{class:'note'},s.note):null,
+h('div',{class:'row',style:'margin-top:6px'},h('a',{class:'btn s b',href:textLink(p),target:'_blank',rel:'noopener'},'查看地圖'),h('a',{class:'btn s g',href:textLink(p,1)+'&travelmode='+MODES[S.mode],target:'_blank',rel:'noopener'},'開始導航'),btn('複製地址','cpv',{d:{'data-v':s.addr}}),s.conf?btn('複製編號','cpv',{d:{'data-v':s.conf}}):null,crud('stays',s)))}))]}
+function render(){const a=$('#app');a.replaceChildren(S.v==='home'?viewHome():viewTrip())}
+/* ===== events (registered once) ===== */
+const miss=t=>{const a=pd(t.start),b=pd(t.end);if(!a||!b)return 0;const n=dd(a,b);if(n<0||n>90)return 0;for(let i=0;i<=n;i++)if(!t.days.some(d=>d.date===fd(add(a,i))))return 1;return 0};
+function fill(t){const a=pd(t.start),n=dd(a,pd(t.end));for(let i=0;i<=n;i++){const ds=fd(add(a,i));if(!t.days.some(d=>d.date===ds))t.days.push({id:uid(),date:ds,title:''})}}
+const A={
+newTrip:()=>tripForm(),editTrip:id=>tripForm(id),open:id=>{S.tid=id;S.v='trip';S.tab='home';S.day=null;render();scrollTo(0,0)},back:()=>{S.v='home';render()},tab:id=>{S.tab=id;render()},
+togArch:()=>{S.arch=!S.arch;render()},
+dupTrip:id=>{DB.trips.unshift(clone(DB.trips.find(t=>t.id===id)));persist()},
+arcTrip:id=>{const t=DB.trips.find(x=>x.id===id);t.archived=!t.archived;persist()},
+delTrip:id=>{const t=DB.trips.find(x=>x.id===id);confirmBox('確定刪除「'+t.name+'」？所有資料將無法復原。',()=>{DB.trips=DB.trips.filter(x=>x!==t);persist()})},
+expAll:()=>exportBox(DB,'tripbook-all.json'),expOne:id=>{const t=DB.trips.find(x=>x.id===id);exportBox({v:2,trips:[t]},'trip-'+t.name+'.json')},imp:importBox,
+reset:()=>confirmBox('這會清除所有旅程，並還原成示範旅程。確定嗎？',()=>{DB={v:2,trips:[demo()]};S.v='home';persist()}),
+add:(id,b)=>openForm(b.dataset.k),edit:(id,b)=>openForm(b.dataset.k,id),
+del:(id,b)=>{const t=T(),k=b.dataset.k,o=t[k].find(x=>x.id===id);confirmBox('確定刪除「'+F[k].lab(o)+'」？',()=>{t[k]=t[k].filter(x=>x!==o);if(k==='days'){t.items=t.items.filter(i=>i.dayId!==id);S.day=null}if(k==='cities')t.items.forEach(i=>{if(i.cityId===id)i.cityId=''});persist()})},
+up:(id)=>mv(id,-1),dn:id=>mv(id,1),
+daySel:id=>{S.day=id;render()},genDays:()=>{const t=T();if(!miss(t))return toast('請先在「編輯旅程」設定正確的出發與回程日期',1);fill(t);persist()},
+route:routeDay,
+cpAddr:id=>{const i=T().items.find(x=>x.id===id);copy(i.addr||i.place)},cpv:(id,b)=>copy(b.dataset.v),
+dupItem:id=>{const t=T(),i=t.items.find(x=>x.id===id);t.items.push(Object.assign({},i,{id:uid(),name:i.name+'（複本）'}));persist()}};
+function mv(id,d){const c=T().cities,i=c.findIndex(x=>x.id===id),j=i+d;if(j<0||j>=c.length)return;[c[i],c[j]]=[c[j],c[i]];persist()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset.id,b)});
+document.addEventListener('change',e=>{const el=e.target,c=el.dataset&&el.dataset.c;if(c==='mode'){S.mode=el.value;toast('路線方式：'+S.mode)}if(c==='todo'){const x=T().todos.find(o=>o.id===el.dataset.id);x.done=el.checked;persist()}});
+/* ===== init ===== */
+DB=load();if(!DB){DB={v:2,trips:[demo()]};save()}
+render();
+</script>
+</body>
+</html>
